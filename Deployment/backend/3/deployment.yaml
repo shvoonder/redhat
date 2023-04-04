@@ -1,31 +1,26 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: frontend
+  name: backend3
   labels:
-    app: frontend
-    app.kubernetes.io/component: frontend
-    app.kubernetes.io/instance: frontend
-    app.kubernetes.io/name: frontend
+    app: backend3
+    app.kubernetes.io/component: backend3
+    app.kubernetes.io/instance: backend3
+    app.kubernetes.io/name: backend3
     app.kubernetes.io/part-of: api-workshop
-    app.openshift.io/runtime: nginx 
+    app.openshift.io/runtime: nodejs
     app.openshift.io/runtime-namespace: api-workshop
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: frontend
+      app: backend3
   template:
     metadata:
       labels:
-        app: frontend
-        deployment: frontend
+        app: backend3
+        deployment: backend3
     spec:
-      volumes:
-      - name: app-config
-        configMap:
-          name: app-config
-          defaultMode: 509  #This change the premissions for the mounted files
       containers:
       - resources:
           requests:
@@ -34,39 +29,37 @@ spec:
           limits: {}
         readinessProbe:
           httpGet:
-            path: /probes/readiness
-            port: 8080
+            path: /health/readiness
+            port: 9091
             scheme: HTTP
           timeoutSeconds: 1
           periodSeconds: 10
           successThreshold: 1
           failureThreshold: 3
         terminationMessagePath: /dev/termination-log
-        name: frontend
-        volumeMounts:
-            - name: app-config
-              mountPath: '/usr/share/nginx/html/config' #the location where the files will be mounted
+        name: backend3
         livenessProbe:
           httpGet:
-            path: /probes/liveness
-            port: 8080
+            path: /health/liveliness
+            port: 9091
             scheme: HTTP
           timeoutSeconds: 1
           periodSeconds: 10
           successThreshold: 1
           failureThreshold: 3
-        envFrom:
-        - configMapRef:
-            name: app-environment
+        env:
+          - name: PORT
+            valueFrom:
+              configMapKeyRef:
+                name: app-environment
+                key: BACKEBD_PORT
         ports:
-          - containerPort: 8080
-            protocol: TCP
-          - containerPort: 8443
+          - containerPort: 9091
             protocol: TCP
         imagePullPolicy: IfNotPresent
         terminationMessagePolicy: File
         # Update with your image name
-        image: 'quay.io/shvoonder/frontend:v2'
+        image: 'quay.io/shvoonder/backend-app:v1'
         #
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
